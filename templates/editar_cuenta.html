@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Editar cuenta streaming</h2>
+<form method="post" class="mt-3">
+  <div class="mb-3">
+    <label class="form-label">Servicio (Netflix, Disney+...)</label>
+    <input type="text" name="service" class="form-control" required value="{{ account.service }}">
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Usuario / Correo</label>
+    <input type="text" name="user" class="form-control" required value="{{ account.user }}">
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Contraseña</label>
+    <input type="text" name="password" class="form-control" required value="{{ account.password }}">
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Descripción / Tipo</label>
+    <input type="text" name="profile" class="form-control" value="{{ account.profile or '' }}">
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Perfiles / Slots disponibles en esta cuenta</label>
+    <input type="number" name="total_slots" class="form-control"
+           value="{{ account.total_slots }}" min="1">
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Notas</label>
+    <textarea name="notes" class="form-control" rows="3">{{ account.notes or '' }}</textarea>
+  </div>
+
+  <button type="submit" class="btn btn-success">Guardar cambios</button>
+  <a href="{{ url_for('cuentas') }}" class="btn btn-secondary">Cancelar</a>
+{% endblock %}

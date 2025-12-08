@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2 class="mb-1">Mensaje de {{ tipo }}</h2>
+<p class="text-muted mb-3">
+  Para: <strong>{{ sub.client.name }}</strong> · Servicio: <strong>{{ sub.account.service }}</strong>
+</p>
+
+<div class="mb-3">
+  <label class="form-label">Vista previa del mensaje</label>
+  <div class="form-control" style="min-height: 160px; white-space: pre-wrap; background: #0f172a08;">
+    {{ msg }}
+  </div>
+</div>
+
+<div class="mb-3">
+  <button type="button" class="btn btn-outline-secondary me-2" id="btnCopyMsg">
+    <i class="bi bi-clipboard"></i> Copiar mensaje
+  </button>
+
+  {% if wa_link %}
+    <a href="{{ wa_link }}" target="_blank" class="btn btn-success me-2">
+      <i class="bi bi-whatsapp"></i> Abrir en WhatsApp
+    </a>
+  {% else %}
+    <span class="text-muted">
+      <i class="bi bi-exclamation-circle"></i>
+      No se puede generar link de WhatsApp (sin número o no es plataforma WhatsApp).
+    </span>
+  {% endif %}
+</div>
+
+<div class="mt-3">
+  <a href="{{ url_for('ventas') }}" class="btn btn-outline-secondary">
+    ← Volver a ventas
+  </a>
+</div>
+
+<textarea id="hiddenMsg" style="position:absolute; left:-9999px; top:-9999px;">{{ msg }}</textarea>
+
+<script>
+  const btnCopy = document.getElementById('btnCopyMsg');
+  const hiddenMsg = document.getElementById('hiddenMsg');
+
+  btnCopy.addEventListener('click', () => {
+    hiddenMsg.select();
+    hiddenMsg.setSelectionRange(0, 99999);
+    document.execCommand('copy');
+    btnCopy.innerHTML = '<i class="bi bi-check2-circle"></i> Copiado';
+    setTimeout(() => {
+      btnCopy.innerHTML = '<i class="bi bi-clipboard"></i> Copiar mensaje';
+    }, 1500);
+  });
+</script>
+
+{% endblock %}

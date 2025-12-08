@@ -1,0 +1,5 @@
+cd /sdcard/backups/"sistema de ventas"
+
+python app.py
+
+ngrok http 5005

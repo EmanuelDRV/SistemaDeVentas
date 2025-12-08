@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>Ventas con pago pendiente</h2>
+  <a class="btn btn-secondary" href="{{ url_for('ventas') }}">Volver a ventas</a>
+</div>
+
+<div class="table-responsive">
+  <table class="table table-sm table-striped align-middle">
+    <thead>
+      <tr>
+        <th>Cliente</th>
+        <th>Servicio</th>
+        <th>Vendedor</th>
+        <th>Fin</th>
+        <th>Días restantes</th>
+        <th>Precio</th>
+        <th>Moneda</th>
+        <th>Slot</th>
+        <th>Mensaje pago</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in subs %}
+        {% set dias = (s.end_date - today).days %}
+        <tr>
+          <td>{{ s.client.name }}</td>
+          <td>{{ s.account.service }}</td>
+          <td>{{ s.seller.name }}</td>
+          <td>{{ s.end_date.strftime('%d/%m/%Y') }}</td>
+          <td>{{ dias }}</td>
+          <td>{{ '%.2f'|format(s.price) }}</td>
+          <td>{{ s.currency }}</td>
+          <td>{{ s.slot }}</td>
+          <td>
+            <a class="btn btn-sm btn-outline-info"
+               href="{{ url_for('mensaje_pago', sub_id=s.id) }}">Mensaje pago</a>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

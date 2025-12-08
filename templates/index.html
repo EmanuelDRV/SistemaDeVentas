@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h1 class="mb-0">Panel general</h1>
+    <small class="text-muted">Resumen de suscripciones y ventas activas</small>
+  </div>
+  <a href="{{ url_for('nueva_venta') }}" class="btn btn-primary">
+    + Registrar nueva venta
+  </a>
+</div>
+
+{# ----------- TARJETAS RESUMEN ------------- #}
+<div class="row g-3 mb-3">
+  <div class="col-12 col-md-4">
+    <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="text-muted text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.08em;">
+            Suscripciones activas
+          </span>
+          <span class="badge bg-success">HOY</span>
+        </div>
+        <h2 class="mb-1">{{ activas_count }}</h2>
+        <small class="text-muted">
+          Clientes con acceso vigente al servicio.
+        </small>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-md-4">
+    <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="text-muted text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.08em;">
+            Por vencer (3 días)
+          </span>
+          <span class="badge bg-warning text-dark">ALERTA</span>
+        </div>
+        <h2 class="mb-1">{{ por_vencer_count }}</h2>
+        <small class="text-muted">
+          Suscripciones que están a punto de vencer.
+        </small>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-md-4">
+    <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="text-muted text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.08em;">
+            Total del mes por moneda
+          </span>
+          <span class="badge bg-primary">Ventas</span>
+        </div>
+
+        {% if total_por_moneda %}
+          {% for code, total in total_por_moneda.items() %}
+            <div class="d-flex justify-content-between">
+              <span class="text-muted">{{ code }}</span>
+              <strong>{{ '%.2f'|format(total) }}</strong>
+            </div>
+          {% endfor %}
+        {% else %}
+          <small class="text-muted">Aún no hay ventas registradas este mes.</small>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ----------- RESUMEN POR VENDEDOR ------------- #}
+<div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h3 class="mb-0" style="font-size: 1rem;">Resumen por vendedor (mes actual)</h3>
+      <small class="text-muted">Totales agrupados por moneda</small>
+    </div>
+
+    {% if totales_vendedor %}
+      <div class="table-responsive mt-2">
+        <table class="table table-sm table-striped align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Vendedor</th>
+              <th>Totales</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for seller_name, monedas in totales_vendedor.items() %}
+              <tr>
+                <td>{{ seller_name }}</td>
+                <td>
+                  {% for code, total in monedas.items() %}
+                    <span class="badge bg-light text-dark me-1 mb-1">
+                      {{ code }} {{ '%.2f'|format(total) }}
+                    </span>
+                  {% endfor %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-muted mb-0">
+        Aún no hay ventas registradas este mes por vendedor.
+      </p>
+    {% endif %}
+  </div>
+</div>
+
+{# ----------- DOS COLUMNAS: ACTIVAS / POR VENCER ------------- #}
+<div class="row g-3">
+  <div class="col-12 col-lg-6">
+    <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h3 class="mb-0" style="font-size: 1rem;">Suscripciones activas</h3>
+          <a href="{{ url_for('ventas') }}" class="btn btn-sm btn-outline-secondary">
+            Ver todas las ventas
+          </a>
+        </div>
+        <small class="text-muted d-block mb-2">
+          Listado de suscripciones cuyo fin es igual o superior a hoy ({{ today.strftime('%d/%m/%Y') }}).
+        </small>
+
+        {% if active_subs %}
+          <div class="table-responsive">
+            <table class="table table-sm table-striped align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Cliente</th>
+                  <th>Servicio</th>
+                  <th>Fin</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for s in active_subs %}
+                  {% set dias = (s.end_date - today).days %}
+                  <tr>
+                    <td>{{ s.client.name }}</td>
+                    <td>{{ s.account.service }}</td>
+                    <td>{{ s.end_date.strftime('%d/%m/%Y') }}</td>
+                    <td>
+                      {% if dias >= 20 %}
+                        <span class="badge bg-success me-1">{{ dias }} días</span>
+                      {% elif dias >= 10 %}
+                        <span class="badge bg-warning text-dark me-1">{{ dias }} días</span>
+                      {% elif dias >= 1 %}
+                        <span class="badge bg-danger me-1">{{ dias }} días</span>
+                      {% else %}
+                        <span class="badge bg-secondary me-1">Vence hoy</span>
+                      {% endif %}
+
+                      {% if s.payment_status == 'pagado' %}
+                        <span class="badge bg-success">Pagado</span>
+                      {% elif s.payment_status == 'renovado' %}
+                        <span class="badge bg-primary">Renovado</span>
+                      {% else %}
+                        <span class="badge bg-warning text-dark">Pendiente</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-muted mb-0">No hay suscripciones activas registradas.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-lg-6">
+    <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h3 class="mb-0" style="font-size: 1rem;">Suscripciones por vencer (3 días)</h3>
+          <a href="{{ url_for('ventas_pendientes') }}" class="btn btn-sm btn-outline-warning">
+            Ver pagos pendientes
+          </a>
+        </div>
+        <small class="text-muted d-block mb-2">
+          Suscripciones con fin entre hoy y los próximos 3 días.
+        </small>
+
+        {% if expiring_subs %}
+          <div class="table-responsive">
+            <table class="table table-sm table-striped align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Cliente</th>
+                  <th>Servicio</th>
+                  <th>Fin</th>
+                  <th>Días</th>
+                  <th>Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for s in expiring_subs %}
+                  {% set dias = (s.end_date - today).days %}
+                  <tr>
+                    <td>{{ s.client.name }}</td>
+                    <td>{{ s.account.service }}</td>
+                    <td>{{ s.end_date.strftime('%d/%m/%Y') }}</td>
+                    <td>
+                      {% if dias > 0 %}
+                        {{ dias }}
+                      {% else %}
+                        0
+                      {% endif %}
+                    </td>
+                    <td>
+                      <a class="btn btn-sm btn-outline-success mb-1"
+                         href="{{ url_for('mensaje_recordatorio', sub_id=s.id) }}">
+                        Recordatorio
+                      </a>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-muted mb-0">No hay suscripciones por vencer en los próximos días.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

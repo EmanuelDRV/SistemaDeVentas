@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Editar venta / suscripción</h2>
+<p>
+  Cliente: <strong>{{ sub.client.name }}</strong><br>
+  Servicio: <strong>{{ sub.account.service }}</strong>
+</p>
+
+<form method="post" class="mt-3">
+  <div class="mb-3">
+    <label class="form-label">Vendedor</label>
+    <select name="seller_id" class="form-select" required>
+      {% for v in sellers %}
+        <option value="{{ v.id }}"
+                {% if v.id == sub.seller_id %}selected{% endif %}>
+          {{ v.name }} - {{ v.phone }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Fecha de inicio</label>
+    <input type="date" name="start_date" class="form-control"
+           value="{{ sub.start_date.strftime('%Y-%m-%d') }}" required>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Fecha de fin</label>
+    <input type="date" name="end_date" class="form-control"
+           value="{{ sub.end_date.strftime('%Y-%m-%d') }}" required>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Precio</label>
+    <input type="number" step="0.01" name="price" class="form-control"
+           value="{{ '%.2f'|format(sub.price) }}" required>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Moneda</label>
+    <select name="currency" class="form-select" required>
+      {% for code, label in currencies %}
+        <option value="{{ code }}"
+                {% if code == sub.currency %}selected{% endif %}>
+          {{ label }} ({{ code }})
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Plataforma</label>
+    <select name="platform" class="form-select">
+      {% for code, label in platforms %}
+        <option value="{{ code }}"
+                {% if code == sub.platform %}selected{% endif %}>
+          {{ label }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Estado de pago</label>
+    <select name="payment_status" class="form-select">
+      {% for code, label in pay_statuses %}
+        <option value="{{ code }}"
+                {% if code == sub.payment_status %}selected{% endif %}>
+          {{ label }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Slot / Perfil</label>
+    <input type="text" name="slot" class="form-control" value="{{ sub.slot or '' }}">
+  </div>
+
+  <button type="submit" class="btn btn-success">Guardar cambios</button>
+  <a href="{{ url_for('ventas') }}" class="btn btn-secondary">Cancelar</a>
+{% endblock %}

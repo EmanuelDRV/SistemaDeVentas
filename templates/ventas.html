@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h2 class="mb-0">Ventas / Suscripciones</h2>
+    <small class="text-muted">
+      Gestión de todas las ventas registradas en el sistema.
+    </small>
+  </div>
+  <a href="{{ url_for('nueva_venta') }}" class="btn btn-primary">
+    + Registrar nueva venta
+  </a>
+</div>
+
+<form method="get" class="row g-2 mb-3 align-items-end">
+  <div class="col-12 col-md-3">
+    <label class="form-label">Buscar</label>
+    <div class="input-group">
+      <span class="input-group-text"><i class="bi bi-search"></i></span>
+      <input type="text" class="form-control" name="q"
+             placeholder="Cliente, servicio, teléfono..."
+             value="{{ q or '' }}">
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <label class="form-label">Vendedor</label>
+    <select name="seller_id" class="form-select">
+      <option value="">Todos</option>
+      {% for v in sellers %}
+        <option value="{{ v.id }}"
+          {% if selected_seller_id == v.id %}selected{% endif %}>
+          {{ v.name }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-6 col-md-2">
+    <label class="form-label">Plataforma</label>
+    <select name="platform" class="form-select">
+      <option value="">Todas</option>
+      {% for value, label in platforms %}
+        <option value="{{ value }}"
+          {% if selected_platform == value %}selected{% endif %}>
+          {{ label }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-6 col-md-2">
+    <label class="form-label">Estado pago</label>
+    <select name="payment_status" class="form-select">
+      <option value="">Todos</option>
+      {% for value, label in pay_statuses %}
+        <option value="{{ value }}"
+          {% if selected_payment_status == value %}selected{% endif %}>
+          {{ label }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-6 col-md-2">
+    <button class="btn btn-outline-secondary w-100" type="submit">
+      Aplicar filtros
+    </button>
+  </div>
+</form>
+
+<div class="table-responsive">
+  <table class="table table-striped align-middle mb-0">
+    <thead>
+      <tr>
+        <th>Cliente</th>
+        <th>Servicio</th>
+        <th>Cuenta</th>
+        <th>Vendedor</th>
+        <th>Inicio</th>
+        <th>Fin</th>
+        <th>Precio</th>
+        <th>Estado</th>
+        <th style="width: 235px;">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% if subs %}
+        {% for s in subs %}
+          {% set dias = (s.end_date - today).days %}
+          <tr>
+            <td>{{ s.client.name }}</td>
+            <td>{{ s.account.service }}</td>
+            <td>
+              {{ s.account.user }}
+              {% if s.slot %}<br><small class="text-muted">Perfil: {{ s.slot }}</small>{% endif %}
+            </td>
+            <td>{{ s.seller.name if s.seller else 'Sin vendedor' }}</td>
+            <td>{{ s.start_date.strftime('%d/%m/%Y') }}</td>
+            <td>{{ s.end_date.strftime('%d/%m/%Y') }}</td>
+            <td>{{ '%.2f'|format(s.price) }} {{ s.currency }}</td>
+            <td>
+              {# Estado de días restantes #}
+              {% if dias >= 20 %}
+                <span class="badge bg-success me-1">Activo · {{ dias }} días</span>
+              {% elif dias >= 10 %}
+                <span class="badge bg-warning text-dark me-1">Próximo · {{ dias }} días</span>
+              {% elif dias >= 1 %}
+                <span class="badge bg-danger me-1">Urgente · {{ dias }} días</span>
+              {% elif dias == 0 %}
+                <span class="badge bg-secondary me-1">Vence hoy</span>
+              {% else %}
+                <span class="badge bg-dark me-1">Vencido</span>
+              {% endif %}
+
+              {# Estado de pago #}
+              {% if s.payment_status == 'pagado' %}
+                <span class="badge bg-success">Pagado</span>
+              {% elif s.payment_status == 'renovado' %}
+                <span class="badge bg-primary">Renovado</span>
+              {% else %}
+                <span class="badge bg-warning text-dark">Pendiente</span>
+              {% endif %}
+            </td>
+            <td>
+              <a href="{{ url_for('mensaje_entrega', sub_id=s.id) }}"
+                 class="btn btn-sm btn-outline-secondary mb-1">
+                Entrega
+              </a>
+              <a href="{{ url_for('mensaje_recordatorio', sub_id=s.id) }}"
+                 class="btn btn-sm btn-outline-success mb-1">
+                Recordatorio
+              </a>
+              <a href="{{ url_for('mensaje_pago', sub_id=s.id) }}"
+                 class="btn btn-sm btn-outline-warning mb-1">
+                Cobro
+              </a>
+              <a href="{{ url_for('editar_venta', sub_id=s.id) }}"
+                 class="btn btn-sm btn-outline-primary mb-1">
+                Editar
+              </a>
+              <form method="post"
+                    action="{{ url_for('eliminar_venta', sub_id=s.id) }}"
+                    style="display:inline-block;"
+                    onsubmit="return confirm('¿Seguro que deseas eliminar esta venta/suscripción?');">
+                <button class="btn btn-sm btn-outline-danger">Eliminar</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      {% else %}
+        <tr>
+          <td colspan="9" class="text-center text-muted">
+            No hay ventas que coincidan con los filtros actuales.
+          </td>
+        </tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

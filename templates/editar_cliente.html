@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Editar cliente</h2>
+<form method="post" class="mt-3">
+  <div class="mb-3">
+    <label class="form-label">Nombre</label>
+    <input type="text" name="name" class="form-control" required value="{{ client.name }}">
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Código de país</label>
+    <select name="country_code" class="form-select">
+      <option value="">-- Seleccionar --</option>
+      {% for code, label in country_codes %}
+        <option value="{{ code }}"
+                {% if client.country_code == code %}selected{% endif %}>
+          {{ label }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">WhatsApp / Teléfono</label>
+    <input type="text" name="phone" class="form-control" value="{{ client.phone or '' }}">
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Email</label>
+    <input type="email" name="email" class="form-control" value="{{ client.email or '' }}">
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Notas</label>
+    <textarea name="notes" class="form-control" rows="3">{{ client.notes or '' }}</textarea>
+  </div>
+
+  <button type="submit" class="btn btn-success">Guardar cambios</button>
+  <a href="{{ url_for('clientes') }}" class="btn btn-secondary">Cancelar</a>
+{% endblock %}

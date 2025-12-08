@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h2 class="mb-0">Historial de {{ client.name }}</h2>
+    <small class="text-muted">
+      Tel: {% if client.country_code %}+{{ client.country_code }} {% endif %}{{ client.phone or 'Sin teléfono' }}
+      {% if client.email %} · Email: {{ client.email }}{% endif %}
+    </small>
+  </div>
+  <a href="{{ url_for('nueva_venta') }}" class="btn btn-primary">
+    + Nueva venta para este cliente
+  </a>
+</div>
+
+{% if client.notes %}
+  <div class="mb-3">
+    <span class="badge bg-info text-dark">Notas del cliente</span>
+    <div class="mt-1">{{ client.notes }}</div>
+  </div>
+{% endif %}
+
+<h5 class="mt-3 mb-2">Suscripciones / ventas</h5>
+{% if subs %}
+  <div class="table-responsive">
+    <table class="table table-striped align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Servicio</th>
+          <th>Cuenta</th>
+          <th>Vendedor</th>
+          <th>Inicio</th>
+          <th>Fin</th>
+          <th>Precio</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in subs %}
+          {% set dias = (s.end_date - today).days %}
+          <tr>
+            <td>{{ s.account.service }}</td>
+            <td>{{ s.account.user }}</td>
+            <td>{{ s.seller.name if s.seller else 'Sin vendedor' }}</td>
+            <td>{{ s.start_date.strftime('%d/%m/%Y') }}</td>
+            <td>{{ s.end_date.strftime('%d/%m/%Y') }}</td>
+            <td>{{ '%.2f'|format(s.price) }} {{ s.currency }}</td>
+            <td>
+              {# Estado por días restantes #}
+              {% if dias >= 20 %}
+                <span class="badge bg-success me-1">{{ dias }} días</span>
+              {% elif dias >= 10 %}
+                <span class="badge bg-warning text-dark me-1">{{ dias }} días</span>
+              {% elif dias >= 1 %}
+                <span class="badge bg-danger me-1">{{ dias }} días</span>
+              {% else %}
+                <span class="badge bg-secondary me-1">Vencido</span>
+              {% endif %}
+
+              {# Estado de pago #}
+              {% if s.payment_status == 'pagado' %}
+                <span class="badge bg-success">Pagado</span>
+              {% elif s.payment_status == 'renovado' %}
+                <span class="badge bg-primary">Renovado</span>
+              {% else %}
+                <span class="badge bg-warning text-dark">Pendiente</span>
+              {% endif %}
+            </td>
+            <td>
+              <a href="{{ url_for('mensaje_entrega', sub_id=s.id) }}"
+                 class="btn btn-sm btn-outline-secondary mb-1">
+                Entrega
+              </a>
+              <a href="{{ url_for('mensaje_recordatorio', sub_id=s.id) }}"
+                 class="btn btn-sm btn-outline-success mb-1">
+                Recordatorio
+              </a>
+              <a href="{{ url_for('mensaje_pago', sub_id=s.id) }}"
+                 class="btn btn-sm btn-outline-warning mb-1">
+                Cobro
+              </a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <p class="text-muted">Este cliente aún no tiene suscripciones registradas.</p>
+{% endif %}
+
+<div class="mt-3">
+  <a href="{{ url_for('clientes') }}" class="btn btn-outline-secondary">
+    ← Volver a clientes
+  </a>
+</div>
+
+{% endblock %}

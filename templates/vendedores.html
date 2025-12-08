@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>Vendedores</h2>
+  <a class="btn btn-primary" href="{{ url_for('nuevo_vendedor') }}">+ Nuevo vendedor</a>
+</div>
+
+<div class="table-responsive">
+  <table class="table table-sm table-striped align-middle">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>WhatsApp</th>
+        <th>Notas</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for v in sellers %}
+        <tr>
+          <td>{{ v.name }}</td>
+          <td>{{ v.phone }}</td>
+          <td>{{ v.notes }}</td>
+          <td>
+            <form method="post"
+                  action="{{ url_for('eliminar_vendedor', seller_id=v.id) }}"
+                  onsubmit="return confirm('¿Seguro que quieres eliminar este vendedor?');">
+              <button type="submit" class="btn btn-sm btn-outline-danger">
+                Eliminar
+              </button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
