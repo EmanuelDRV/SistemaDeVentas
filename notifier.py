@@ -1,53 +1,52 @@
 from datetime import date, timedelta
+import os
 import requests
 
-# Importamos cosas desde tu app principal
+# Importamos la app y modelos desde tu proyecto
 from app import app, Subscription, render_message, build_wa_link
 
-# === CONFIGURA AQUÍ TU BOT ===
-# Usa el MISMO token y chat_id que te funcionan en el notifier viejo.
-TELEGRAM_TOKEN = "7636575849:AAGp-5XQuIev5OtcbFLrJzzipu3iuq0YFZs"      # ej: "123456789:AA...."
-TELEGRAM_CHAT_ID = -1003331904641             # tu chat_id (número, sin comillas o con, da igual)
+# === CONFIGURACIÓN DEL BOT TELEGRAM ===
+# Ahora viene desde variables de entorno (GitHub Actions y Fly.io)
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
-
-# Cuántos días antes avisar vencimientos
+# Días antes para avisar vencimientos
 DIAS_ANTICIPACION = 3
 
 
 def send_telegram_message(text: str) -> bool:
-    """Envía un mensaje simple al chat configurado. Devuelve True si salió bien."""
+    """Envía un mensaje a Telegram. Devuelve True si fue exitoso."""
     if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
-        print("Falta configurar TOKEN o CHAT_ID de Telegram")
+        print("ERROR: Falta TELEGRAM_TOKEN o TELEGRAM_CHAT_ID")
         return False
 
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-    params = {
+    payload = {
         "chat_id": TELEGRAM_CHAT_ID,
-        "text": text
+        "text": text,
+        "parse_mode": "HTML",
     }
+
     try:
-        r = requests.get(url, params=params, timeout=10)
+        r = requests.post(url, json=payload, timeout=10)
         if not r.ok:
-            print("Error al enviar mensaje Telegram:", r.text)
+            print("Error Telegram:", r.text)
             return False
         return True
     except Exception as e:
-        print("Excepción enviando mensaje Telegram:", e)
+        print("Excepción enviando Telegram:", e)
         return False
 
 
 def build_expiring_section(subs, today: date):
-    """
-    Texto para suscripciones por vencer con link de recordatorio.
-    Usa la plantilla 'recordatorio' y, si es WhatsApp, genera link wa.me.
-    """
+    """Construye el texto de suscripciones por vencer."""
     if not subs:
         return None
 
     lines = []
     lines.append(
-        f"⚠️ SUSCRIPCIONES POR VENCER (próximos {DIAS_ANTICIPACION} días)\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        f"⚠️ <b>SUSCRIPCIONES POR VENCER</b> (próximos {DIAS_ANTICIPACION} días)\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     )
 
     for idx, s in enumerate(subs, start=1):
@@ -57,34 +56,28 @@ def build_expiring_section(subs, today: date):
         fecha_fin = s.end_date.strftime("%d/%m/%Y")
         estado_pago = s.payment_status.upper() if s.payment_status else "N/A"
 
-        # Mensaje tipo "recordatorio" usando la plantilla del sistema
+        # Mensaje tipo "recordatorio"
         mensaje = render_message("recordatorio", s)
-
-        wa_link = None
-        if s.platform == "whatsapp":
-            wa_link = build_wa_link(s.client, mensaje)
+        wa_link = build_wa_link(s.client, mensaje) if s.platform == "whatsapp" else None
 
         lines.append(
-            f"\n{idx}️⃣ {cliente} – {servicio}\n"
+            f"\n{idx}️⃣ <b>{cliente}</b> – {servicio}\n"
             f"   🗓 Vence: {fecha_fin} (en {dias} días)\n"
-            f"   💰 Estado pago: {estado_pago}\n"
-            f"   📲 Recordatorio: {wa_link or '📵 Sin link de WhatsApp (no hay número o no es WhatsApp)'}"
+            f"   💰 Pago: {estado_pago}\n"
+            f"   📲 Recordatorio: {wa_link or 'Sin WhatsApp'}"
         )
 
     return "\n".join(lines)
 
 
 def build_unpaid_section(subs, today: date):
-    """
-    Texto para pagos pendientes (más de 1 día sin pagar) con link de pago.
-    Usa la plantilla 'pago' y, si es WhatsApp, genera link wa.me.
-    """
+    """Construye texto para pagos pendientes."""
     if not subs:
         return None
 
     lines = []
     lines.append(
-        "💰 PAGOS PENDIENTES (más de 1 día sin pagar)\n"
+        "💰 <b>PAGOS PENDIENTES</b> (más de 1 día sin pagar)\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     )
 
@@ -96,31 +89,28 @@ def build_unpaid_section(subs, today: date):
         fecha_fin = s.end_date.strftime("%d/%m/%Y")
         estado_pago = s.payment_status.upper() if s.payment_status else "N/A"
 
-        # Mensaje tipo "pago" usando la plantilla del sistema
+        # Mensaje tipo "pago"
         mensaje = render_message("pago", s)
-
-        wa_link = None
-        if s.platform == "whatsapp":
-            wa_link = build_wa_link(s.client, mensaje)
+        wa_link = build_wa_link(s.client, mensaje) if s.platform == "whatsapp" else None
 
         lines.append(
-            f"\n{idx}️⃣ {cliente} – {servicio}\n"
+            f"\n{idx}️⃣ <b>{cliente}</b> – {servicio}\n"
             f"   📅 Inicio: {fecha_inicio} (hace {dias_transcurridos} días)\n"
             f"   🗓 Vence: {fecha_fin}\n"
             f"   💸 Estado pago: {estado_pago}\n"
-            f"   📲 Cobro: {wa_link or '📵 Sin link de WhatsApp (no hay número o no es WhatsApp)'}"
+            f"   📲 Cobro: {wa_link or 'Sin WhatsApp'}"
         )
 
     return "\n".join(lines)
 
 
 def check_and_notify():
-    """Revisa la base y manda un Telegram si hay cosas por avisar."""
+    """Revisa la base y envía notificaciones a Telegram."""
     today = date.today()
     limite = today + timedelta(days=DIAS_ANTICIPACION)
 
     with app.app_context():
-        # 1) Suscripciones que vencen pronto (entre hoy y hoy+N días)
+        # Suscripciones por vencer
         expiring = (
             Subscription.query
             .filter(Subscription.end_date >= today,
@@ -129,11 +119,13 @@ def check_and_notify():
             .all()
         )
 
-        # 2) Pagos pendientes: payment_status != 'pagado' y ya pasó 1 día desde el inicio
+        # Pagos pendientes
         unpaid = (
             Subscription.query
-            .filter(Subscription.payment_status != "pagado",
-                    Subscription.start_date <= (today - timedelta(days=1)))
+            .filter(
+                Subscription.payment_status != "pagado",
+                Subscription.start_date <= (today - timedelta(days=1))
+            )
             .order_by(Subscription.start_date.asc())
             .all()
         )
@@ -146,19 +138,21 @@ def check_and_notify():
 
         unpaid_text = build_unpaid_section(unpaid, today)
         if unpaid_text:
-            parts.append("")   # línea en blanco entre secciones
+            if parts:
+                parts.append("")  # separación
             parts.append(unpaid_text)
 
         if not parts:
-            print("No hay suscripciones por vencer ni pagos pendientes.")
+            print("No hay avisos para hoy.")
             return
 
         full_message = "\n".join(parts)
         ok = send_telegram_message(full_message)
+
         if ok:
-            print("Aviso enviado por Telegram.")
+            print("Notificación enviada correctamente.")
         else:
-            print("No se pudo enviar el aviso por Telegram.")
+            print("ERROR al enviar la notificación.")
 
 
 if __name__ == "__main__":
