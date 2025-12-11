@@ -7,8 +7,8 @@ from app import app, Subscription, render_message, build_wa_link
 
 # === CONFIGURACIÓN DEL BOT TELEGRAM ===
 # Ahora viene desde variables de entorno (GitHub Actions y Fly.io)
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+TELEGRAM_TOKEN = os.getenv("7636575849:AAGp-5XQuIev5OtcbFLrJzzipu3iuq0YFZs")
+TELEGRAM_CHAT_ID = os.getenv("-1003331904641")
 
 # Días antes para avisar vencimientos
 DIAS_ANTICIPACION = 3
@@ -157,3 +157,4 @@ def check_and_notify():
 
 if __name__ == "__main__":
     check_and_notify()
+
